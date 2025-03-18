@@ -1,4 +1,4 @@
-﻿<Window x:Class="Waccy.MainWindow"
+<Window x:Class="Waccy.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="Waccy 剪贴板管理器" Height="500" Width="600"
         WindowStartupLocation="CenterScreen"
-        ShowInTaskbar="True"
+        ShowInTaskbar="False"
         ResizeMode="CanMinimize"
         Deactivated="Window_Deactivated"
         KeyDown="Window_KeyDown"
@@ -17,7 +17,7 @@
         Background="#F5F5F5">
     
     <Window.Resources>
-        <!-- 添加样式资源 -->
+        <!-- 样式资源 -->
         <Style x:Key="ModernButton" TargetType="Button">
             <Setter Property="Background" Value="#2196F3"/>
             <Setter Property="Foreground" Value="White"/>
@@ -104,14 +104,14 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- 标题和搜索栏 -->
+        <!-- 搜索栏 -->
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             
-            <TextBlock Grid.Column="0" Text="剪贴板历史" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,15" Foreground="#333333"/>
+            <TextBlock Grid.Column="0" Text="搜索历史记录" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,15" Foreground="#333333"/>
             
             <TextBox x:Name="SearchBox" 
                      Grid.Column="1" 
@@ -129,7 +129,7 @@
             </TextBox>
         </Grid>
         
-        <!-- 分类标签页 -->
+        <!-- 标签页 -->
         <TabControl x:Name="CategoryTabs" Grid.Row="1" Margin="0,0,0,10" BorderThickness="0">
             <TabItem Header="全部" Tag="All" Style="{StaticResource CategoryTabStyle}" IsSelected="True"/>
             <TabItem Header="文本" Tag="Text" Style="{StaticResource CategoryTabStyle}"/>
@@ -137,7 +137,7 @@
             <TabItem Header="文件" Tag="FilePath" Style="{StaticResource CategoryTabStyle}"/>
         </TabControl>
 
-        <!-- 剪贴板列表 -->
+        <!-- 历史记录列表 -->
         <ListView Grid.Row="2" 
                   x:Name="HistoryListView" 
                   SelectionMode="Single"
@@ -169,20 +169,20 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         
-                        <!-- 类型图标 -->
+                        <!-- 图标 -->
                         <Border Grid.Column="0" Width="32" Height="32" Background="#E3F2FD" CornerRadius="4" Margin="0,0,10,0">
                             <TextBlock Text="{Binding TypeIcon}" FontFamily="Segoe MDL2 Assets" FontSize="16" 
                                        HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#2196F3"/>
                         </Border>
                         
-                        <!-- 内容预览 -->
+                        <!-- 预览 -->
                         <TextBlock Grid.Column="1" 
                                    Text="{Binding Preview}" 
                                    TextTrimming="CharacterEllipsis" 
                                    VerticalAlignment="Center"
                                    FontSize="14"/>
                         
-                        <!-- 时间戳 -->
+                        <!-- 时间 -->
                         <TextBlock Grid.Column="2" 
                                    Text="{Binding Timestamp, StringFormat=HH:mm:ss}" 
                                    Foreground="Gray" 
@@ -196,7 +196,7 @@
         <!-- 底部按钮 -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
             <Button x:Name="ClearButton" 
-                    Content="清空历史" 
+                    Content="清除历史记录" 
                     Style="{StaticResource ModernButton}"
                     Background="#F44336"
                     Margin="0,0,10,0" 
@@ -209,3 +209,4 @@
         </StackPanel>
     </Grid>
 </Window>
+

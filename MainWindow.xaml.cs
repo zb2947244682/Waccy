@@ -28,8 +28,8 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
-        // 不再隐藏窗口，设置为正常显示
-        this.ShowInTaskbar = true;
+        // 设置窗口不在任务栏显示
+        this.ShowInTaskbar = false;
         this.Opacity = 1.0;
         
         InitializeComponent();
@@ -55,8 +55,8 @@ public partial class MainWindow : Window
         // 设置分类切换事件
         CategoryTabs.SelectionChanged += CategoryTabs_SelectionChanged;
 
-        // 窗口在任务栏上显示
-        this.ShowInTaskbar = true;
+        // 窗口不在任务栏上显示
+        this.ShowInTaskbar = false;
         
         // 设置窗口位置居中
         this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -199,6 +199,9 @@ public partial class MainWindow : Window
         // 确保窗口状态为正常
         this.WindowState = WindowState.Normal;
         
+        // 确保窗口不在任务栏显示
+        this.ShowInTaskbar = false;
+        
         // 重要：先设置窗口位置，然后再显示
         this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
         
@@ -269,6 +272,9 @@ public partial class MainWindow : Window
         
         // 标记窗口已初始化
         isInitialized = true;
+        
+        // 确保窗口不在任务栏显示
+        this.ShowInTaskbar = false;
         
         // 如果有项目，默认选择第一项
         if (filteredItems.View.Cast<ClipboardItem>().Any())

@@ -33,8 +33,8 @@ public partial class App : System.Windows.Application
         // 创建主窗口并直接显示
         mainWindow = new MainWindow();
         
-        // 设置为在任务栏上显示
-        mainWindow.ShowInTaskbar = true;
+        // 设置为不在任务栏上显示
+        mainWindow.ShowInTaskbar = false;
         
         // 设置主窗口
         this.MainWindow = mainWindow;
