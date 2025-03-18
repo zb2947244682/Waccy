@@ -72,7 +72,7 @@ namespace Waccy.Services
             contextMenu.Items.Add(openItem);
             contextMenu.Items.Add(clearItem);
             contextMenu.Items.Add(autoStartItem);
-            contextMenu.Items.Add(cleanupItem);
+            // contextMenu.Items.Add(cleanupItem);
             contextMenu.Items.Add(new ToolStripSeparator());
             contextMenu.Items.Add(exitItem);
             
