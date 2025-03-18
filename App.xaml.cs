@@ -30,12 +30,21 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        // 清除旧的注册表启动项
+        bool cleanupResult = AutoStartService.CleanupOldRegistryStartupItem();
+        Debug.WriteLine($"清除旧的注册表启动项结果: {(cleanupResult ? "成功" : "失败")}");
+
         // 记录应用启动模式
         bool isAutoStartEnabled = AutoStartService.IsAutoStartEnabled();
         if (isAutoStartEnabled)
         {
-            Debug.WriteLine("应用程序通过开机自启动启动");
+            Debug.WriteLine("应用程序可能通过开机自启动启动");
         }
+
+        // 记录启动信息
+        Debug.WriteLine($"应用程序启动路径: {Process.GetCurrentProcess().MainModule.FileName}");
+        Debug.WriteLine($"当前目录: {System.IO.Directory.GetCurrentDirectory()}");
+        Debug.WriteLine($"是否具有管理员权限: {IsRunAsAdmin()}");
 
         // 创建主窗口并直接显示
         mainWindow = new MainWindow();
@@ -49,6 +58,22 @@ public partial class App : System.Windows.Application
         // 直接显示主窗口
         mainWindow.Show();
         mainWindow.Activate();
+    }
+
+    private bool IsRunAsAdmin()
+    {
+        // 检查当前进程是否具有管理员权限
+        try
+        {
+            System.Security.Principal.WindowsIdentity identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+            System.Security.Principal.WindowsPrincipal principal = new System.Security.Principal.WindowsPrincipal(identity);
+            return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.WriteLine($"检查管理员权限时出错: {ex.Message}");
+            return false;
+        }
     }
 
     protected override void OnStartup(StartupEventArgs e)
