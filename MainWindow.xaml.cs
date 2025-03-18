@@ -26,6 +26,10 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        // 不再隐藏窗口，设置为正常显示
+        this.ShowInTaskbar = true;
+        this.Opacity = 1.0;
+        
         InitializeComponent();
 
         // 设置数据绑定
@@ -49,22 +53,19 @@ public partial class MainWindow : Window
         // 设置分类切换事件
         CategoryTabs.SelectionChanged += CategoryTabs_SelectionChanged;
 
-        // 设置窗口样式，避免在任务栏显示
-        this.ShowInTaskbar = false;
-
-        // 重要：窗口初始化完成后，直接隐藏
-        this.Loaded += (s, e) => {
-            this.Hide();
-            System.Diagnostics.Debug.WriteLine("窗口初始化完成并隐藏");
-        };
+        // 窗口在任务栏上显示
+        this.ShowInTaskbar = true;
+        
+        // 设置窗口位置居中
+        this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
     }
 
     private void InitializeServices()
     {
-        // 为调试创建控制台窗口
-        AllocConsole();
+        // 移除控制台窗口创建，不再为调试创建控制台窗口
+        // AllocConsole();
         System.Diagnostics.Debug.WriteLine("Waccy剪贴板管理器启动...");
-        Console.WriteLine("Waccy剪贴板管理器启动...");
+        // Console.WriteLine("Waccy剪贴板管理器启动...");
 
         clipboardService = new ClipboardService(this);
         
@@ -83,12 +84,12 @@ public partial class MainWindow : Window
             // 设置钩子
             LowLevelKeyboardHook.SetHook();
             
-            Console.WriteLine("低级键盘钩子已设置，按F7将呼出/隐藏程序窗口");
+            // Console.WriteLine("低级键盘钩子已设置，按F7将呼出/隐藏程序窗口");
             System.Diagnostics.Debug.WriteLine("低级键盘钩子已设置，按F7将呼出/隐藏程序窗口");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"设置键盘钩子时出错: {ex.Message}");
+            // Console.WriteLine($"设置键盘钩子时出错: {ex.Message}");
             System.Diagnostics.Debug.WriteLine($"设置键盘钩子时出错: {ex.Message}");
             System.Windows.MessageBox.Show($"设置键盘钩子时出错: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
@@ -142,11 +143,11 @@ public partial class MainWindow : Window
     {
         if (e == Key.F7)
         {
-            Console.WriteLine("F7键被按下，切换窗口可见性");
+            // Console.WriteLine("F7键被按下，切换窗口可见性");
             System.Diagnostics.Debug.WriteLine("F7键被按下，切换窗口可见性");
             
-            // 在UI线程上运行
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            // 在UI线程上运行，使用InvokeAsync确保不阻塞键盘线程
+            System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 ToggleWindowVisibility();
             });
@@ -155,7 +156,11 @@ public partial class MainWindow : Window
 
     private void TrayIconService_OpenRequested(object? sender, System.EventArgs e)
     {
-        ShowWindow();
+        // 使用Dispatcher.InvokeAsync确保UI线程上操作
+        System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            ShowWindow();
+        });
     }
 
     private void TrayIconService_ExitRequested(object? sender, System.EventArgs e)
@@ -187,14 +192,34 @@ public partial class MainWindow : Window
         // 重置为全部分类
         CategoryTabs.SelectedIndex = 0;
         
-        // 显示窗口
-        this.Show();
+        // 重要：先设置窗口位置，然后再显示
+        this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
         
-        // 将窗口置于顶层
+        // 先将窗口设置为完全透明但有效
+        this.Opacity = 0.0;
+        this.Visibility = Visibility.Visible;
         this.Topmost = true;
-        this.Activate();
-        this.Focus();
-        this.Topmost = false;
+        
+        // 使用动画平滑过渡显示窗口
+        System.Windows.Media.Animation.DoubleAnimation fadeIn = new System.Windows.Media.Animation.DoubleAnimation
+        {
+            From = 0.0,
+            To = 1.0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(150))
+        };
+        
+        this.BeginAnimation(OpacityProperty, fadeIn);
+        
+        // 创建定时器在短暂延迟后取消Topmost
+        System.Windows.Threading.DispatcherTimer timer = new System.Windows.Threading.DispatcherTimer();
+        timer.Interval = TimeSpan.FromMilliseconds(300);
+        timer.Tick += (s, e) => {
+            this.Activate();
+            this.Focus();
+            this.Topmost = false;
+            timer.Stop();
+        };
+        timer.Start();
         
         // 如果有项目，默认选择第一项
         if (filteredItems.View.Cast<ClipboardItem>().Any())
@@ -206,8 +231,8 @@ public partial class MainWindow : Window
 
     private void Window_Deactivated(object sender, System.EventArgs e)
     {
-        // 窗口失去焦点时隐藏
-        this.Hide();
+        // 不再在窗口失去焦点时隐藏
+        // this.Hide();
     }
 
     private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -228,8 +253,15 @@ public partial class MainWindow : Window
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        // 窗口加载后隐藏
-        this.Hide();
+        // 窗口加载后不再隐藏
+        // this.Hide();
+        
+        // 如果有项目，默认选择第一项
+        if (filteredItems.View.Cast<ClipboardItem>().Any())
+        {
+            HistoryListView.SelectedIndex = 0;
+            HistoryListView.Focus();
+        }
     }
 
     private void HistoryListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -294,8 +326,8 @@ public partial class MainWindow : Window
         trayIconService?.Dispose();
         clipboardService?.Dispose();
         
-        // 释放控制台
-        FreeConsole();
+        // 不再需要释放控制台，因为我们没有创建它
+        // FreeConsole();
         
         base.OnClosed(e);
     }

@@ -7,12 +7,11 @@
         mc:Ignorable="d"
         Title="Waccy 剪贴板管理器" Height="500" Width="600"
         WindowStartupLocation="CenterScreen"
-        ShowInTaskbar="False"
+        ShowInTaskbar="True"
         ResizeMode="CanMinimize"
         Deactivated="Window_Deactivated"
         KeyDown="Window_KeyDown"
         Loaded="Window_Loaded"
-        Visibility="Hidden"
         Background="#F5F5F5">
     
     <Window.Resources>

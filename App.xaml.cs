@@ -14,12 +14,11 @@ public partial class App : System.Windows.Application
 {
     private Mutex appMutex;
     private const string MutexName = "WaccyClipboardManager";
+    private MainWindow mainWindow;
 
-    protected override void OnStartup(StartupEventArgs e)
+    private void Application_Startup(object sender, StartupEventArgs e)
     {
-        base.OnStartup(e);
-
-        // 检查是否已有实例在运行
+        // 在显示任何窗口之前先检查实例
         bool createdNew;
         appMutex = new Mutex(true, MutexName, out createdNew);
 
@@ -30,6 +29,24 @@ public partial class App : System.Windows.Application
             Shutdown();
             return;
         }
+
+        // 创建主窗口并直接显示
+        mainWindow = new MainWindow();
+        
+        // 设置为在任务栏上显示
+        mainWindow.ShowInTaskbar = true;
+        
+        // 设置主窗口
+        this.MainWindow = mainWindow;
+        
+        // 直接显示主窗口
+        mainWindow.Show();
+        mainWindow.Activate();
+    }
+
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        base.OnStartup(e);
 
         // 尝试在应用程序级别设置低级键盘钩子
         try
@@ -43,8 +60,6 @@ public partial class App : System.Windows.Application
             Debug.WriteLine($"在应用程序级别设置键盘钩子时出错: {ex.Message}");
             // 继续运行，稍后会在主窗口中再次尝试设置钩子
         }
-
-        // 继续正常启动
     }
 
     protected override void OnExit(ExitEventArgs e)
