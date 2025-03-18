@@ -2,6 +2,8 @@
 using System.Data;
 using System.Windows;
 using System.Threading;
+using System.Diagnostics;
+using Waccy.Services;
 
 namespace Waccy;
 
@@ -29,11 +31,35 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        // 尝试在应用程序级别设置低级键盘钩子
+        try
+        {
+            // 注册低级别键盘钩子
+            LowLevelKeyboardHook.SetHook();
+            Debug.WriteLine("应用程序级别已设置低级键盘钩子");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.WriteLine($"在应用程序级别设置键盘钩子时出错: {ex.Message}");
+            // 继续运行，稍后会在主窗口中再次尝试设置钩子
+        }
+
         // 继续正常启动
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        // 移除低级键盘钩子
+        try
+        {
+            LowLevelKeyboardHook.Unhook();
+            Debug.WriteLine("在应用程序退出时移除低级键盘钩子");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.WriteLine($"移除键盘钩子时出错: {ex.Message}");
+        }
+
         // 释放互斥锁资源
         appMutex?.ReleaseMutex();
         appMutex?.Dispose();

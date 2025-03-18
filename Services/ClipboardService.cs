@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Forms;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using Waccy.Models;
@@ -141,51 +142,140 @@ namespace Waccy.Services
         {
             if (item == null) return;
             
-            System.Windows.Clipboard.Clear();
-            
-            switch (item.Type)
+            try
             {
-                case ClipboardItemType.Text:
-                    System.Windows.Clipboard.SetText((string)item.Content);
-                    break;
-                case ClipboardItemType.Image:
-                    System.Windows.Clipboard.SetImage((BitmapSource)item.Content);
-                    break;
-                case ClipboardItemType.FilePath:
-                    var fileCollection = new System.Collections.Specialized.StringCollection();
-                    fileCollection.Add((string)item.Content);
-                    System.Windows.Clipboard.SetFileDropList(fileCollection);
-                    break;
+                System.Diagnostics.Debug.WriteLine($"准备粘贴项目类型: {item.Type}");
+                
+                // 先暂存选中项到剪贴板
+                System.Windows.Clipboard.Clear();
+                
+                switch (item.Type)
+                {
+                    case ClipboardItemType.Text:
+                        string text = (string)item.Content;
+                        System.Diagnostics.Debug.WriteLine($"正在复制文本: {(text.Length > 20 ? text.Substring(0, 20) + "..." : text)}");
+                        System.Windows.Clipboard.SetText(text);
+                        break;
+                    case ClipboardItemType.Image:
+                        System.Diagnostics.Debug.WriteLine("正在复制图片");
+                        System.Windows.Clipboard.SetImage((System.Windows.Media.Imaging.BitmapSource)item.Content);
+                        break;
+                    case ClipboardItemType.FilePath:
+                        string path = (string)item.Content;
+                        System.Diagnostics.Debug.WriteLine($"正在复制文件路径: {path}");
+                        var fileCollection = new System.Collections.Specialized.StringCollection();
+                        fileCollection.Add(path);
+                        System.Windows.Clipboard.SetFileDropList(fileCollection);
+                        break;
+                }
+                
+                // 等待剪贴板内容更新
+                System.Threading.Thread.Sleep(200);
+                
+                // 先尝试用SendKeys
+                try
+                {
+                    // 允许切换到前一个窗口
+                    System.Threading.Thread.Sleep(300);
+                    System.Diagnostics.Debug.WriteLine("正在发送Alt+Tab快捷键...");
+                    // 使用SendKeys模拟Alt+Tab
+                    SendAltTab();
+                    System.Threading.Thread.Sleep(400); // 等待窗口切换
+                    
+                    System.Diagnostics.Debug.WriteLine("正在发送Ctrl+V快捷键...");
+                    // 使用SendKeys模拟Ctrl+V
+                    SendCtrlV();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"使用SendKeys粘贴失败: {ex.Message}");
+                    // 备用方案：使用SendInput
+                    try
+                    {
+                        System.Diagnostics.Debug.WriteLine("尝试使用SendInput方法粘贴...");
+                        SimulateCtrlV();
+                    }
+                    catch (Exception ex2)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"使用SendInput粘贴也失败: {ex2.Message}");
+                    }
+                }
+                
+                // 将当前项移到历史记录的顶部
+                if (History.Contains(item) && History.IndexOf(item) > 0)
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        History.Remove(item);
+                        History.Insert(0, item);
+                    });
+                }
             }
-            
-            // 模拟按下Ctrl+V
-            SendKeys(0x11, 0x56); // Ctrl+V
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"粘贴失败: {ex.Message}");
+            }
         }
 
-        private void SendKeys(byte vk1, byte vk2)
+        private void SendAltTab()
         {
-            // 定义键盘事件
+            // 使用SendInput发送Alt+Tab组合键
             INPUT[] inputs = new INPUT[4];
             
-            // 按下第一个键 (Ctrl)
+            // 按下Alt
             inputs[0].type = 1; // INPUT_KEYBOARD
-            inputs[0].ki.wVk = vk1;
+            inputs[0].ki.wVk = 0x12; // VK_ALT
             
-            // 按下第二个键 (V)
+            // 按下Tab
             inputs[1].type = 1; // INPUT_KEYBOARD
-            inputs[1].ki.wVk = vk2;
+            inputs[1].ki.wVk = 0x09; // VK_TAB
             
-            // 释放第二个键 (V)
+            // 释放Tab
             inputs[2].type = 1; // INPUT_KEYBOARD
-            inputs[2].ki.wVk = vk2;
+            inputs[2].ki.wVk = 0x09; // VK_TAB
             inputs[2].ki.dwFlags = 2; // KEYEVENTF_KEYUP
             
-            // 释放第一个键 (Ctrl)
+            // 释放Alt
             inputs[3].type = 1; // INPUT_KEYBOARD
-            inputs[3].ki.wVk = vk1;
+            inputs[3].ki.wVk = 0x12; // VK_ALT
             inputs[3].ki.dwFlags = 2; // KEYEVENTF_KEYUP
             
-            SendInput(4, inputs, Marshal.SizeOf(typeof(INPUT)));
+            uint result = SendInput(4, inputs, Marshal.SizeOf(typeof(INPUT)));
+            System.Diagnostics.Debug.WriteLine($"SendInput结果(Alt+Tab): {result}");
+        }
+
+        private void SendCtrlV()
+        {
+            // 使用SendInput发送Ctrl+V组合键
+            INPUT[] inputs = new INPUT[4];
+            
+            // 按下Ctrl
+            inputs[0].type = 1; // INPUT_KEYBOARD
+            inputs[0].ki.wVk = 0x11; // VK_CONTROL
+            
+            // 按下V
+            inputs[1].type = 1; // INPUT_KEYBOARD
+            inputs[1].ki.wVk = 0x56; // VK_V
+            
+            // 释放V
+            inputs[2].type = 1; // INPUT_KEYBOARD
+            inputs[2].ki.wVk = 0x56; // VK_V
+            inputs[2].ki.dwFlags = 2; // KEYEVENTF_KEYUP
+            
+            // 释放Ctrl
+            inputs[3].type = 1; // INPUT_KEYBOARD
+            inputs[3].ki.wVk = 0x11; // VK_CONTROL
+            inputs[3].ki.dwFlags = 2; // KEYEVENTF_KEYUP
+            
+            uint result = SendInput(4, inputs, Marshal.SizeOf(typeof(INPUT)));
+            System.Diagnostics.Debug.WriteLine($"SendInput结果(Ctrl+V): {result}");
+        }
+
+        private void SimulateCtrlV()
+        {
+            // 另一种方式模拟Ctrl+V
+            System.Windows.Forms.SendKeys.SendWait("^v");
+            System.Diagnostics.Debug.WriteLine("已发送System.Windows.Forms.SendKeys.SendWait(\"^v\")");
         }
 
         public void Dispose()
