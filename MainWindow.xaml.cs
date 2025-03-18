@@ -23,6 +23,8 @@ public partial class MainWindow : Window
     private CollectionViewSource filteredItems;
     private string currentSearchText = string.Empty;
     private string currentCategory = "All";
+    private bool isReallyClosing = false; // 添加标志，用于区分真正关闭和隐藏窗口
+    private bool isInitialized = false;
 
     public MainWindow()
     {
@@ -165,6 +167,8 @@ public partial class MainWindow : Window
 
     private void TrayIconService_ExitRequested(object? sender, System.EventArgs e)
     {
+        // 设置真正关闭标志
+        isReallyClosing = true;
         System.Windows.Application.Current.Shutdown();
     }
 
@@ -191,6 +195,9 @@ public partial class MainWindow : Window
         
         // 重置为全部分类
         CategoryTabs.SelectedIndex = 0;
+        
+        // 确保窗口状态为正常
+        this.WindowState = WindowState.Normal;
         
         // 重要：先设置窗口位置，然后再显示
         this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -231,8 +238,12 @@ public partial class MainWindow : Window
 
     private void Window_Deactivated(object sender, System.EventArgs e)
     {
-        // 不再在窗口失去焦点时隐藏
-        // this.Hide();
+        // 只有当窗口已初始化并且可见时，才在失去焦点时隐藏
+        if (isInitialized && this.IsVisible)
+        {
+            this.Hide();
+            System.Diagnostics.Debug.WriteLine("窗口失去焦点，已隐藏到托盘");
+        }
     }
 
     private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -255,6 +266,9 @@ public partial class MainWindow : Window
     {
         // 窗口加载后不再隐藏
         // this.Hide();
+        
+        // 标记窗口已初始化
+        isInitialized = true;
         
         // 如果有项目，默认选择第一项
         if (filteredItems.View.Cast<ClipboardItem>().Any())
@@ -305,6 +319,32 @@ public partial class MainWindow : Window
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         this.Hide();
+    }
+
+    private void Window_StateChanged(object sender, System.EventArgs e)
+    {
+        // 当窗口最小化时，隐藏窗口并显示在托盘
+        if (this.WindowState == WindowState.Minimized)
+        {
+            this.Hide();
+            this.WindowState = WindowState.Normal; // 重置窗口状态，以便下次显示时是正常大小
+            System.Diagnostics.Debug.WriteLine("窗口最小化，已隐藏到托盘");
+        }
+    }
+
+    private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+    {
+        // 只有当不是真正关闭时才取消关闭事件
+        if (!isReallyClosing)
+        {
+            e.Cancel = true;
+            this.Hide();
+            System.Diagnostics.Debug.WriteLine("窗口关闭被拦截，已隐藏到托盘");
+        }
+        else
+        {
+            System.Diagnostics.Debug.WriteLine("应用程序正在真正关闭");
+        }
     }
 
     protected override void OnClosed(System.EventArgs e)
