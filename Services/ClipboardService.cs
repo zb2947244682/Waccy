@@ -15,6 +15,7 @@ namespace Waccy.Services
         private IntPtr windowHandle;
         private HwndSource source;
         private readonly int MAX_HISTORY_ITEMS = 10;
+        private Window window;
 
         public ObservableCollection<ClipboardItem> History { get; } = new ObservableCollection<ClipboardItem>();
 
@@ -22,7 +23,27 @@ namespace Waccy.Services
 
         public ClipboardService(Window window)
         {
+            this.window = window;
+            
+            // 等待窗口加载完成后再初始化
+            if (window.IsLoaded)
+            {
+                InitializeClipboardListener();
+            }
+            else
+            {
+                window.Loaded += (s, e) => InitializeClipboardListener();
+            }
+        }
+
+        private void InitializeClipboardListener()
+        {
             windowHandle = new WindowInteropHelper(window).Handle;
+            if (windowHandle == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("无法获取窗口句柄");
+            }
+
             source = HwndSource.FromHwnd(windowHandle);
             source?.AddHook(WndProc);
 
@@ -44,25 +65,25 @@ namespace Waccy.Services
         {
             try
             {
-                if (Clipboard.ContainsText())
+                if (System.Windows.Clipboard.ContainsText())
                 {
-                    string text = Clipboard.GetText();
+                    string text = System.Windows.Clipboard.GetText();
                     if (!string.IsNullOrWhiteSpace(text))
                     {
                         AddToHistory(new ClipboardItem(ClipboardItemType.Text, text));
                     }
                 }
-                else if (Clipboard.ContainsImage())
+                else if (System.Windows.Clipboard.ContainsImage())
                 {
-                    BitmapSource image = Clipboard.GetImage();
+                    BitmapSource image = System.Windows.Clipboard.GetImage();
                     if (image != null)
                     {
                         AddToHistory(new ClipboardItem(ClipboardItemType.Image, image));
                     }
                 }
-                else if (Clipboard.ContainsFileDropList())
+                else if (System.Windows.Clipboard.ContainsFileDropList())
                 {
-                    var files = Clipboard.GetFileDropList();
+                    var files = System.Windows.Clipboard.GetFileDropList();
                     if (files.Count > 0)
                     {
                         foreach (string file in files)
@@ -93,7 +114,7 @@ namespace Waccy.Services
             }
 
             // 插入新项到最前面
-            Application.Current.Dispatcher.Invoke(() =>
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 History.Insert(0, item);
 
@@ -109,7 +130,7 @@ namespace Waccy.Services
 
         public void ClearHistory()
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 History.Clear();
                 HistoryChanged?.Invoke(this, EventArgs.Empty);
@@ -120,20 +141,20 @@ namespace Waccy.Services
         {
             if (item == null) return;
             
-            Clipboard.Clear();
+            System.Windows.Clipboard.Clear();
             
             switch (item.Type)
             {
                 case ClipboardItemType.Text:
-                    Clipboard.SetText((string)item.Content);
+                    System.Windows.Clipboard.SetText((string)item.Content);
                     break;
                 case ClipboardItemType.Image:
-                    Clipboard.SetImage((BitmapSource)item.Content);
+                    System.Windows.Clipboard.SetImage((BitmapSource)item.Content);
                     break;
                 case ClipboardItemType.FilePath:
                     var fileCollection = new System.Collections.Specialized.StringCollection();
                     fileCollection.Add((string)item.Content);
-                    Clipboard.SetFileDropList(fileCollection);
+                    System.Windows.Clipboard.SetFileDropList(fileCollection);
                     break;
             }
             

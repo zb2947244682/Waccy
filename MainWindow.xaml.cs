@@ -63,7 +63,7 @@ public partial class MainWindow : Window
 
     private void TrayIconService_ExitRequested(object? sender, EventArgs e)
     {
-        Application.Current.Shutdown();
+        System.Windows.Application.Current.Shutdown();
     }
 
     private void ToggleWindowVisibility()
@@ -98,7 +98,7 @@ public partial class MainWindow : Window
         this.Hide();
     }
 
-    private void Window_KeyDown(object sender, KeyEventArgs e)
+    private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == Key.Escape)
         {

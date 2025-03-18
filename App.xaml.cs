@@ -8,7 +8,7 @@ namespace Waccy;
 /// <summary>
 /// Interaction logic for App.xaml
 /// </summary>
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private Mutex appMutex;
     private const string MutexName = "WaccyClipboardManager";
@@ -24,7 +24,7 @@ public partial class App : Application
         if (!createdNew)
         {
             // 如果已经有一个实例在运行，则退出
-            MessageBox.Show("Waccy 剪贴板管理器已经在运行。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show("Waccy 剪贴板管理器已经在运行。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             Shutdown();
             return;
         }
