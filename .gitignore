@@ -1,0 +1,72 @@
+# Visual Studio 生成的文件
+.vs/
+**/bin/
+**/obj/
+*.[Cc]ache
+*.exe
+*.dll
+*.pdb
+*.user
+*.aps
+*.pch
+*.vspscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.log
+*.vssscc
+*.pubxml
+*.publishproj
+.publish/
+FakesAssemblies/
+
+# Visual Studio Code
+.vscode/
+.history/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# NuGet
+packages/
+*.nupkg
+*.pfx
+*.snk
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# 构建结果
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+AnyCPU/
+[Ww][Ii][Nn]32/
+[Bb]uild[Ll]og.*
+
+# 临时文件
+[Tt]emp/
+[Tt]mp/
+~$*
+*~
+
+# Windows特定文件
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# 自动生成的文件
+**/Generated_Code/
+
+# 项目特定文件
+Resources/app.ico 
