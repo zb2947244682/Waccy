@@ -10,6 +10,7 @@ namespace Waccy.Services
     {
         private NotifyIcon notifyIcon;
         private readonly ClipboardService clipboardService;
+        private ToolStripMenuItem autoStartItem;
 
         public event EventHandler ExitRequested;
         public event EventHandler OpenRequested;
@@ -38,11 +39,16 @@ namespace Waccy.Services
             var clearItem = new ToolStripMenuItem("清空剪贴板历史");
             clearItem.Click += (s, e) => clipboardService.ClearHistory();
             
+            autoStartItem = new ToolStripMenuItem("开机时启动本程序");
+            autoStartItem.Checked = AutoStartService.IsAutoStartEnabled();
+            autoStartItem.Click += AutoStartItem_Click;
+
             var exitItem = new ToolStripMenuItem("退出");
             exitItem.Click += (s, e) => ExitRequested?.Invoke(this, EventArgs.Empty);
             
             contextMenu.Items.Add(openItem);
             contextMenu.Items.Add(clearItem);
+            contextMenu.Items.Add(autoStartItem);
             contextMenu.Items.Add(new ToolStripSeparator());
             contextMenu.Items.Add(exitItem);
             
@@ -50,6 +56,26 @@ namespace Waccy.Services
             
             // 双击托盘图标打开主窗口
             notifyIcon.DoubleClick += (s, e) => OpenRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void AutoStartItem_Click(object sender, EventArgs e)
+        {
+            bool newState = !autoStartItem.Checked;
+            
+            if (AutoStartService.SetAutoStart(newState))
+            {
+                autoStartItem.Checked = newState;
+                
+                string message = newState ? 
+                    "已设置为开机启动" : 
+                    "已取消开机启动";
+                    
+                notifyIcon.ShowBalloonTip(
+                    2000,
+                    "Waccy 剪贴板管理器",
+                    message,
+                    ToolTipIcon.Info);
+            }
         }
 
         private Icon GetAppIcon()

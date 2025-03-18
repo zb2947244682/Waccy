@@ -25,9 +25,13 @@ public partial class MainWindow : Window
     private string currentCategory = "All";
     private bool isReallyClosing = false; // 添加标志，用于区分真正关闭和隐藏窗口
     private bool isInitialized = false;
+    private bool isAutoStarted = false; // 添加标志，标识是否通过开机自启动启动
 
     public MainWindow()
     {
+        // 检查是否通过开机自启动运行
+        isAutoStarted = AutoStartService.IsAutoStartEnabled();
+        
         // 设置窗口不在任务栏显示
         this.ShowInTaskbar = false;
         this.Opacity = 1.0;
@@ -275,6 +279,20 @@ public partial class MainWindow : Window
         
         // 确保窗口不在任务栏显示
         this.ShowInTaskbar = false;
+        
+        // 如果是通过开机自启动，则自动最小化到托盘
+        if (isAutoStarted)
+        {
+            System.Diagnostics.Debug.WriteLine("程序通过开机自启动，自动最小化到托盘");
+            // 短暂延迟后隐藏窗口，确保初始化完成
+            System.Windows.Threading.DispatcherTimer timer = new System.Windows.Threading.DispatcherTimer();
+            timer.Interval = TimeSpan.FromMilliseconds(200);
+            timer.Tick += (s, args) => {
+                this.Hide();
+                timer.Stop();
+            };
+            timer.Start();
+        }
         
         // 如果有项目，默认选择第一项
         if (filteredItems.View.Cast<ClipboardItem>().Any())

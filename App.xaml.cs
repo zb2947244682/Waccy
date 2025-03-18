@@ -30,6 +30,13 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        // 记录应用启动模式
+        bool isAutoStartEnabled = AutoStartService.IsAutoStartEnabled();
+        if (isAutoStartEnabled)
+        {
+            Debug.WriteLine("应用程序通过开机自启动启动");
+        }
+
         // 创建主窗口并直接显示
         mainWindow = new MainWindow();
         
