@@ -19,7 +19,29 @@ namespace Waccy.Services
 
         public HotkeyService(Window window)
         {
+            if (window == null)
+                throw new ArgumentNullException(nameof(window));
+
+            // 窗口可能尚未初始化，所以我们需要等待它完成加载
+            if (window.IsLoaded)
+            {
+                Initialize(window);
+            }
+            else
+            {
+                window.Loaded += (sender, e) => Initialize(window);
+            }
+        }
+
+        private void Initialize(Window window)
+        {
             windowHandle = new WindowInteropHelper(window).Handle;
+            
+            if (windowHandle == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("无法获取窗口句柄。");
+            }
+            
             source = HwndSource.FromHwnd(windowHandle);
             source?.AddHook(WndProc);
         }
@@ -52,9 +74,22 @@ namespace Waccy.Services
 
         public void Dispose()
         {
-            UnregisterHotkey();
-            source?.RemoveHook(WndProc);
-            source?.Dispose();
+            try
+            {
+                UnregisterHotkey();
+                
+                if (source != null)
+                {
+                    source.RemoveHook(WndProc);
+                    source.Dispose();
+                    source = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 可以考虑记录异常
+                System.Diagnostics.Debug.WriteLine($"释放HotkeyService资源时发生错误: {ex.Message}");
+            }
         }
 
         #region Native Methods
