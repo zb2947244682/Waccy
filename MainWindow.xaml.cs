@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Data;
 using System.Windows.Forms;
 using Waccy.Models;
 using Waccy.Services;
@@ -16,19 +20,43 @@ public partial class MainWindow : Window
     private ClipboardService clipboardService;
     private HotkeyService hotkeyService;
     private TrayIconService trayIconService;
+    private CollectionViewSource filteredItems;
+    private string currentSearchText = string.Empty;
+    private string currentCategory = "All";
 
     public MainWindow()
     {
         InitializeComponent();
 
-        // 初始化服务
+        // 设置数据绑定
         InitializeServices();
 
+        // 重要：在绑定数据源之前先设置为null，避免初始闪烁
+        HistoryListView.ItemsSource = null;
+        
+        // 初始化CollectionViewSource进行过滤
+        filteredItems = new CollectionViewSource
+        {
+            Source = clipboardService.History
+        };
+        
+        // 设置过滤谓词
+        filteredItems.Filter += FilterItems;
+        
         // 设置数据绑定
-        HistoryListView.ItemsSource = clipboardService.History;
+        HistoryListView.ItemsSource = filteredItems.View;
+        
+        // 设置分类切换事件
+        CategoryTabs.SelectionChanged += CategoryTabs_SelectionChanged;
 
-        // 隐藏窗口
-        this.Hide();
+        // 设置窗口样式，避免在任务栏显示
+        this.ShowInTaskbar = false;
+
+        // 重要：窗口初始化完成后，直接隐藏
+        this.Loaded += (s, e) => {
+            this.Hide();
+            System.Diagnostics.Debug.WriteLine("窗口初始化完成并隐藏");
+        };
     }
 
     private void InitializeServices()
@@ -39,6 +67,10 @@ public partial class MainWindow : Window
         Console.WriteLine("Waccy剪贴板管理器启动...");
 
         clipboardService = new ClipboardService(this);
+        
+        // 设置历史记录变更事件
+        clipboardService.HistoryChanged += ClipboardService_HistoryChanged;
+        
         hotkeyService = new HotkeyService(this);
         trayIconService = new TrayIconService(clipboardService);
 
@@ -64,6 +96,46 @@ public partial class MainWindow : Window
         // 绑定托盘图标事件
         trayIconService.OpenRequested += TrayIconService_OpenRequested;
         trayIconService.ExitRequested += TrayIconService_ExitRequested;
+    }
+
+    private void ClipboardService_HistoryChanged(object sender, EventArgs e)
+    {
+        // 当剪贴板历史变更时，刷新视图
+        filteredItems.View.Refresh();
+    }
+
+    private void FilterItems(object sender, FilterEventArgs e)
+    {
+        if (e.Item is ClipboardItem item)
+        {
+            bool matchesCategory = currentCategory == "All" || 
+                                  item.Type.ToString() == currentCategory;
+            
+            bool matchesSearch = string.IsNullOrEmpty(currentSearchText) ||
+                                 (item.SearchContent != null && 
+                                  item.SearchContent.Contains(currentSearchText, StringComparison.OrdinalIgnoreCase));
+            
+            e.Accepted = matchesCategory && matchesSearch;
+        }
+        else
+        {
+            e.Accepted = false;
+        }
+    }
+
+    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        currentSearchText = SearchBox.Text;
+        filteredItems.View.Refresh();
+    }
+
+    private void CategoryTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (CategoryTabs.SelectedItem is TabItem selectedTab)
+        {
+            currentCategory = selectedTab.Tag.ToString();
+            filteredItems.View.Refresh();
+        }
     }
 
     private void LowLevelKeyboardHook_KeyDown(object sender, Key e)
@@ -109,6 +181,12 @@ public partial class MainWindow : Window
 
     private void ShowWindow()
     {
+        // 清空搜索框
+        SearchBox.Text = string.Empty;
+        
+        // 重置为全部分类
+        CategoryTabs.SelectedIndex = 0;
+        
         // 显示窗口
         this.Show();
         
@@ -119,7 +197,7 @@ public partial class MainWindow : Window
         this.Topmost = false;
         
         // 如果有项目，默认选择第一项
-        if (clipboardService.History.Count > 0)
+        if (filteredItems.View.Cast<ClipboardItem>().Any())
         {
             HistoryListView.SelectedIndex = 0;
             HistoryListView.Focus();
@@ -211,6 +289,7 @@ public partial class MainWindow : Window
         }
         
         // 清理资源
+        clipboardService.HistoryChanged -= ClipboardService_HistoryChanged;
         hotkeyService?.Dispose();
         trayIconService?.Dispose();
         clipboardService?.Dispose();

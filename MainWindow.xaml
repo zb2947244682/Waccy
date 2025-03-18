@@ -5,43 +5,206 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Waccy"
         mc:Ignorable="d"
-        Title="Waccy 剪贴板管理器" Height="400" Width="500"
+        Title="Waccy 剪贴板管理器" Height="500" Width="600"
         WindowStartupLocation="CenterScreen"
         ShowInTaskbar="False"
         ResizeMode="CanMinimize"
         Deactivated="Window_Deactivated"
         KeyDown="Window_KeyDown"
-        Loaded="Window_Loaded">
-    <Grid Margin="10">
+        Loaded="Window_Loaded"
+        Visibility="Hidden"
+        Background="#F5F5F5">
+    
+    <Window.Resources>
+        <!-- 添加样式资源 -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="4" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1976D2"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#0D47A1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="SearchBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#DDDDDD"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="4">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style x:Key="CategoryTabStyle" TargetType="TabItem">
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Grid>
+                            <Border x:Name="Border" 
+                                    Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" 
+                                    CornerRadius="4,4,0,0" 
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#2196F3"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#2196F3"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#E3F2FD"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    
+    <Grid Margin="15">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="剪贴板历史" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+        <!-- 标题和搜索栏 -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <TextBlock Grid.Column="0" Text="剪贴板历史" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,15" Foreground="#333333"/>
+            
+            <TextBox x:Name="SearchBox" 
+                     Grid.Column="1" 
+                     Width="200" 
+                     Style="{StaticResource SearchBoxStyle}"
+                     TextChanged="SearchBox_TextChanged"
+                     VerticalAlignment="Center"
+                     Margin="10,0,0,10"
+                     FontSize="14">
+                <TextBox.Resources>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="CornerRadius" Value="4"/>
+                    </Style>
+                </TextBox.Resources>
+            </TextBox>
+        </Grid>
+        
+        <!-- 分类标签页 -->
+        <TabControl x:Name="CategoryTabs" Grid.Row="1" Margin="0,0,0,10" BorderThickness="0">
+            <TabItem Header="全部" Tag="All" Style="{StaticResource CategoryTabStyle}" IsSelected="True"/>
+            <TabItem Header="文本" Tag="Text" Style="{StaticResource CategoryTabStyle}"/>
+            <TabItem Header="图片" Tag="Image" Style="{StaticResource CategoryTabStyle}"/>
+            <TabItem Header="文件" Tag="FilePath" Style="{StaticResource CategoryTabStyle}"/>
+        </TabControl>
 
-        <ListView Grid.Row="1" x:Name="HistoryListView" 
+        <!-- 剪贴板列表 -->
+        <ListView Grid.Row="2" 
+                  x:Name="HistoryListView" 
                   SelectionMode="Single"
                   BorderThickness="1"
+                  BorderBrush="#E0E0E0"
+                  Background="White"
                   MouseDoubleClick="HistoryListView_MouseDoubleClick">
+            <ListView.Resources>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <Setter Property="Padding" Value="10,8"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="#E3F2FD"/>
+                            <Setter Property="BorderBrush" Value="#BBDEFB"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#F5F5F5"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </ListView.Resources>
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <Grid Margin="5">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{Binding Preview}" TextTrimming="CharacterEllipsis"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Timestamp, StringFormat=HH:mm:ss}" Foreground="Gray" Margin="10,0,0,0"/>
+                        
+                        <!-- 类型图标 -->
+                        <Border Grid.Column="0" Width="32" Height="32" Background="#E3F2FD" CornerRadius="4" Margin="0,0,10,0">
+                            <TextBlock Text="{Binding TypeIcon}" FontFamily="Segoe MDL2 Assets" FontSize="16" 
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#2196F3"/>
+                        </Border>
+                        
+                        <!-- 内容预览 -->
+                        <TextBlock Grid.Column="1" 
+                                   Text="{Binding Preview}" 
+                                   TextTrimming="CharacterEllipsis" 
+                                   VerticalAlignment="Center"
+                                   FontSize="14"/>
+                        
+                        <!-- 时间戳 -->
+                        <TextBlock Grid.Column="2" 
+                                   Text="{Binding Timestamp, StringFormat=HH:mm:ss}" 
+                                   Foreground="Gray" 
+                                   Margin="10,0,0,0"
+                                   VerticalAlignment="Center"/>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button x:Name="ClearButton" Content="清空历史" Padding="10,5" Margin="0,0,10,0" Click="ClearButton_Click"/>
-            <Button x:Name="CloseButton" Content="关闭" Padding="10,5" Click="CloseButton_Click"/>
+        <!-- 底部按钮 -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button x:Name="ClearButton" 
+                    Content="清空历史" 
+                    Style="{StaticResource ModernButton}"
+                    Background="#F44336"
+                    Margin="0,0,10,0" 
+                    Click="ClearButton_Click"/>
+            
+            <Button x:Name="CloseButton" 
+                    Content="关闭" 
+                    Style="{StaticResource ModernButton}"
+                    Click="CloseButton_Click"/>
         </StackPanel>
     </Grid>
 </Window>

@@ -119,8 +119,8 @@ namespace Waccy.Services
             {
                 History.Insert(0, item);
 
-                // 保持历史记录数量限制
-                while (History.Count > MAX_HISTORY_ITEMS)
+                // 限制历史记录数量为10条
+                while (History.Count > 10)
                 {
                     History.RemoveAt(History.Count - 1);
                 }
